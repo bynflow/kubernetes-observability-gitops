@@ -8,7 +8,7 @@ REQUEST_COUNT = Counter("app_requests_total", "Total app requests", ["method", "
 @app.get("/")
 def index():
     REQUEST_COUNT.labels(method="GET", endpoint="/").inc()
-    return "proj3 app ok - gitops\n", 200
+    return "proj3 app ok - gitops_second_time\n", 200
 
 @app.get("/health")
 def health():
