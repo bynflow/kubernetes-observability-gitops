@@ -20,7 +20,7 @@ spec:
         - name: ghcr-creds
       containers:
       - name: app
-        image: ghcr.io/bynflow/proj3-app:sha-34dcdef
+        image: ghcr.io/bynflow/proj3-app:sha-0d51aa0
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
