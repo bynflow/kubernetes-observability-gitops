@@ -78,3 +78,27 @@ jobs:
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      # Compute immutable image tag from the current commit SHA (short form)
+      # Example: sha-abc1234
+      - name: Set image tag
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      # Update the dev overlay to point to the new immutable image tag
+      # This is the key GitOps step: we change the desired state in Git
+      - name: Update dev overlay image tag
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" k8s/overlays/dev/kustomization.yaml
+
+      # Commit and push the updated manifest back to the repository
+      # This triggers ArgoCD auto-sync, which deploys the new version to dev
+      - name: Commit updated dev overlay
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add k8s/overlays/dev/kustomization.yaml
+          git commit -m "ci: update dev image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git push
