@@ -2,3 +2,7 @@ resources:
   - ../../base
 
 namespace: proj3-prod
+
+images:
+  - name: ghcr.io/bynflow/proj3-app
+    newTag: sha-ab8cb3b
