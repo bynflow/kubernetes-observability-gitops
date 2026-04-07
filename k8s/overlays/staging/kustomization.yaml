@@ -2,3 +2,7 @@ resources:
   - ../../base
 
 namespace: proj3-staging
+
+images:
+  - name: ghcr.io/bynflow/proj3-app
+    newTag: sha-9298d52
