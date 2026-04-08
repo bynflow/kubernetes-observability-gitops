@@ -1,8 +1,14 @@
 # Kubernetes Observability & GitOps — Project 3
 
-## Overview
+![CI](https://img.shields.io/badge/CI-GitHub_Actions-blue)
+![CD](https://img.shields.io/badge/CD-ArgoCD-orange)
+![Registry](https://img.shields.io/badge/Registry-GHCR-blue)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-k3s-326ce5)
+![Observability](https://img.shields.io/badge/Observability-Prometheus%20Grafana-purple)
+![Tests](https://img.shields.io/badge/Tests-pytest-green)
+![GitOps](https://img.shields.io/badge/GitOps-ArgoCD-orange)
 
-A production-grade DevOps system implementing:
+A production-grade GitOps DevOps system combining CI, containerization, declarative deployment, and observability across dev, staging, and production environments.
 
 * CI (GitHub Actions)
 * Containerization (Docker + GHCR)
