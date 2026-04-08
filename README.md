@@ -19,32 +19,31 @@ The system is designed to be **deterministic, reproducible, and environment-awar
 
 ### Architecture overview
 
-````mermaid
-graph TD
-
-A[Developer] --> B[Git Push]
-B --> C[GitHub Repository]
-C --> D[GitHub Actions CI]
-D --> E[Build & Test (pytest)]
-E --> F[GHCR (sha-* image)]
-F --> G[Update Git (dev overlay)]
-G --> H[ArgoCD]
-H --> I1[K8s: dev (auto-sync)]
-H --> I2[K8s: staging (manual)]
-H --> I3[K8s: prod (manual)]
 ```mermaid
-graph LR
-A[Developer] --> B[GitHub Repo]
-B --> C[GitHub Actions CI]
-C --> D[GHCR Image Registry]
-D --> E[GitOps Update (dev overlay)]
-E --> F[ArgoCD]
-F --> G1[dev namespace]
-F --> G2[staging namespace]
-F --> G3[prod namespace]
-````
+graph TD
+A["Developer"] --> B["Git Push"]
+B --> C["GitHub Repository"]
+C --> D["GitHub Actions CI"]
+D --> E["Build and Test - pytest"]
+E --> F["GHCR - sha image"]
+F --> G["Update Git - dev overlay"]
+G --> H["ArgoCD"]
+H --> I1["K8s dev - auto-sync"]
+H --> I2["K8s staging - manual"]
+H --> I3["K8s prod - manual"]
+```
 
 CI builds immutable images which are propagated via Git into environment overlays and deployed by ArgoCD.
+
+**Flow explanation (key points):**
+
+* CI produces an immutable image (sha-based)
+* The image is not deployed directly to Kubernetes
+* Instead, CI updates the Git repository (dev overlay)
+* ArgoCD detects the Git change and performs the deployment
+* Promotion to staging and prod is controlled via Git changes (manual)
+
+This enforces a strict separation between build, delivery, and deployment.
 
 ---
 
@@ -54,11 +53,6 @@ CI builds immutable images which are propagated via Git into environment overlay
 
 * CI is repository-centric (GitHub Actions)
 * CD is cluster-centric (ArgoCD)
-
-This ensures:
-
-* clean responsibility boundaries
-* reproducibility
 
 ---
 
@@ -72,12 +66,6 @@ sha-<commit>
 
 No mutable tags (like `latest`) are used.
 
-Benefits:
-
-* deterministic deployments
-* safe rollback
-* traceability
-
 ---
 
 ### DEC-003 — Git as Source of Truth
@@ -87,10 +75,7 @@ Git stores:
 * structure
 * environment configuration
 
-Git does NOT store:
-
-* runtime state
-* mutable versions
+Git does NOT store runtime state.
 
 ---
 
@@ -99,11 +84,8 @@ Git does NOT store:
 Promotion:
 
 * performed via Git (overlay update)
-* environment-specific
 
 Rollback:
-
-* redeploy previous SHA
 
 ```
 newTag: sha-previous
@@ -171,12 +153,6 @@ Configuration:
 testpaths = tests
 ```
 
-Principles:
-
-* tests precede deployment
-* CI enforces correctness
-* no build without passing tests
-
 ---
 
 ## CI Pipeline
@@ -186,9 +162,7 @@ Stages:
 1. Test (pytest)
 2. Build (Docker)
 3. Push (GHCR)
-4. Update dev overlay (GitOps trigger)
-
-Key guarantee:
+4. Update dev overlay
 
 ```
 No artifact is produced unless tests pass
@@ -206,22 +180,15 @@ proj3-staging
 proj3-prod
 ```
 
-Each environment is isolated and independently controlled.
-
 ---
 
 ## GitOps (ArgoCD)
 
-| Environment | Sync Mode | Purpose             |
-| ----------- | --------- | ------------------- |
-| dev         | auto-sync | continuous delivery |
-| staging     | manual    | validation          |
-| prod        | manual    | controlled release  |
-
-Behavior:
-
-* dev deploys automatically after CI
-* staging/prod require explicit promotion
+| Environment | Mode      |
+| ----------- | --------- |
+| dev         | auto-sync |
+| staging     | manual    |
+| prod        | manual    |
 
 ---
 
@@ -231,17 +198,11 @@ Behavior:
 dev → staging → prod
 ```
 
-Promotion = updating `kustomization.yaml` in target environment.
-
 ---
 
 ## Rollback Strategy
 
-Rollback is deterministic:
-
-* select previous SHA
-* update overlay
-* redeploy via ArgoCD
+Rollback = redeploy previous SHA
 
 ---
 
@@ -250,20 +211,64 @@ Rollback is deterministic:
 Prometheus:
 
 * scrapes `/metrics`
-* tracks request counters
 
 Grafana:
 
-* visual dashboards
-* validates runtime behavior
+* dashboards
+
+---
+
+## How to Run Locally
+
+### Prerequisites
+
+* Docker
+* Python 3.11+
+* kubectl (optional, for port-forward)
+
+### 1) Run tests
+
+```bash
+python -m pytest -q
+```
+
+### 2) Run app locally
+
+```bash
+pip install -r requirements.txt
+python app/app.py
+```
+
+Open: [http://127.0.0.1:8080](http://127.0.0.1:8080)
+
+### 3) Run via Docker
+
+```bash
+docker build -t proj3-app:local .
+docker run -p 8080:80 proj3-app:local
+```
+
+Open: [http://127.0.0.1:8080](http://127.0.0.1:8080)
+
+### 4) (Optional) Access in cluster via port-forward
+
+```bash
+kubectl port-forward svc/proj3-app 8080:80
+```
+
+Open: [http://127.0.0.1:8080](http://127.0.0.1:8080)
 
 ---
 
 ## Security
 
 * GHCR private images
+
 * Kubernetes `imagePullSecrets`
-* controlled image access
+
+* GHCR private images
+
+* Kubernetes `imagePullSecrets`
 
 ---
 
@@ -274,7 +279,23 @@ Grafana:
 * immutable infrastructure approach
 * environment-based promotion
 * integrated testing strategy
-* observability-first mindset
+
+---
+
+## Engineering Perspective
+
+This project demonstrates a clear mental model of modern DevOps systems:
+
+* CI is responsible for building and validating artifacts
+* Git is the single source of truth
+* CD is pull-based (ArgoCD), not push-based
+* Environments are controlled via declarative configuration
+
+This results in:
+
+* reproducible deployments
+* traceable changes
+* controlled promotion across environments
 
 ---
 
@@ -283,5 +304,3 @@ Grafana:
 ```
 This project demonstrates how a system is designed, controlled, and evolved
 ```
-
-with deterministic, reproducible, and auditable behavior.
