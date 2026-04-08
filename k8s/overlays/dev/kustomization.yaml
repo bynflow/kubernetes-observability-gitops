@@ -5,4 +5,4 @@ namespace: default
 
 images:
   - name: ghcr.io/bynflow/proj3-app
-    newTag: sha-5a22fae
+    newTag: sha-9c27376
